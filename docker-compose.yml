@@ -1,0 +1,72 @@
+version: '3'
+
+networks:
+  kafka-net:
+    driver: bridge
+  host-net:
+    external: true
+
+services:
+  hdfsnamenode:
+    build: ./docker/hdfs
+    hostname: hdfsnamenode
+    networks:
+      - kafka-net
+      - host-net
+    ports:
+      - "50070:50070" # Namenode WebUI
+      - "8020:8020" # HDFS API
+#    volume:
+#      - namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=kfk_test
+#    env_file:
+#      - ./hadoop.env
+
+#  hdfsdatanode:
+#    build: ./docker/hdfs
+#    hostname: hdfsdatanode
+#    networks:
+#      - kafka-net
+#    ports:
+#      - "50075:50075"
+#    volume:
+#      - namenode:/hadoop/dfs/data
+#    environment:
+#      SERVICE_PRECONDITION: "hdfsnamenode:50070"
+#    env_file:
+#      - ./hadoop.env
+
+  zookeeper:
+    build: ./docker/zookeeper
+    hostname: zookeeper
+    networks:
+      - kafka-net
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN="yes"
+      - ALLOW_PLAINTEXT_LISTENER="yes"
+    depends_on:
+      - hdfsnamenode
+
+  kafka:
+    build: ./docker/kafka
+    hostname: kafka
+    networks:
+      - kafka-net
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT="172.18.0.2:2181"
+      - ZOOKEEPER_CONNECT="172.18.0.2:2181"
+      - KAFKA_ADVERTISED_PORT="9092"
+      - KAFKA_ADVERTISED_LISTENERS="PLAINTEXT://localhost:9092"
+#      - KAFKA_ADVERTISED_HOST_NAME: "kafka"
+#      - ALLOW_ANONYMOUS_LOGIN=yes
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#      - KAFKA_ZOOKEEPER_CONNECT=localhost:2181
+#      - KAFKA_CFG_ZOOKEEPER_CONNECT=localhost:2181
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    depends_on:
+      - zookeeper

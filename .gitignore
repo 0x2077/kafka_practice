@@ -1,2 +1,13 @@
+# idea-specific:
+.idea/
+
+# java
 *.class
 *.log
+
+# sbt specific
+.cache
+.history
+.lib/
+dist/*
+target/
